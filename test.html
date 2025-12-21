@@ -478,30 +478,22 @@ if (isCorrect) correctCount++;
 q.isCorrect = isCorrect;
 q.userAnswer = userAnswer;  // ←これ追加
 
-flashAnimation(isCorrect, q.answer);
-  
-  answeredQuestions.push(q.id);
-  sessionStorage.setItem("answeredQuestions", JSON.stringify(answeredQuestions));
-
+flashAnimation(isCorrect, q.answer, () => {
   currentIndex++;
-  setTimeout(() => {
-    if (currentIndex >= questions.length) {
-      showResult();
-    } else {
-      showQuestion();
-    }
-  }, 800);
-}
+  if (currentIndex >= questions.length) {
+    showResult();
+  } else {
+    showQuestion();
+  }
+});
 
 // ✅ フラッシュアニメーション
-function flashAnimation(isCorrect, correctAnswer = "") {
+function flashAnimation(isCorrect, correctAnswer = "", callback) {
   const flash = document.createElement("div");
   flash.className = "flash " + (isCorrect ? "correct" : "wrong");
   flash.textContent = isCorrect ? "〇" : "×";
   document.body.appendChild(flash);
 
-
-  // ❌のときだけ正答を表示
   if (!isCorrect) {
     const answerBox = document.createElement("div");
     answerBox.className = "answer-flash";
@@ -510,8 +502,13 @@ function flashAnimation(isCorrect, correctAnswer = "") {
     setTimeout(() => answerBox.remove(), 1500);
   }
 
-  setTimeout(() => flash.remove(), 800);
-  }
+  // 👇 アニメ終了を検知
+  flash.addEventListener("animationend", () => {
+    flash.remove();
+    if (callback) callback();
+  });
+}
+
   // ✅ 答えを表示して手動判定する機能
 function showAnswer() {
   const q = questions[currentIndex];
