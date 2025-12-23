@@ -554,18 +554,24 @@ function showAnswer() {
 
   // ✅ 正解ボタン
   correctBtn.onclick = () => {
-    correctCount++;
-    flashAnimation(true);  // ✔ 出る
-    cleanup();
-    goNext();
-  };
+  q.isCorrect = true;        // ★追加
+  q.userAnswer = q.answer;  // ★追加（自分で正解扱い）
+
+  correctCount++;
+  flashAnimation(true);
+  cleanup();
+  goNext();
+};
 
   // ❌ 不正解ボタン
   wrongBtn.onclick = () => {
-    flashAnimation(false, q.answer);  // ✖＋正答 出る
-    cleanup();
-    goNext();
-  };
+  q.isCorrect = false;       // ★追加
+  q.userAnswer = "";         // ★追加（空でOK）
+
+  flashAnimation(false, q.answer);
+  cleanup();
+  goNext();
+};
 
   judgeContainer.appendChild(correctBtn);
   judgeContainer.appendChild(wrongBtn);
