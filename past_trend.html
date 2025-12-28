@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>StudyBase 過去問推移</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  background: #f3f5f7;
+}
+
+/* ===== ナビバー ===== */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #000814, #001d6e);
+  padding: 10px 40px;
+  color: white;
+}
+.menu a {
+  color: white;
+  margin-left: 20px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* ===== メイン ===== */
+.main {
+  padding: 40px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+input {
+  width: 80px;
+  padding: 6px;
+  margin-right: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="navbar">
+  <div><b>StudyBase</b></div>
+<div class="menu" id="menu">
+      <a href="menu.html">ホーム</a>
+      <a href="select.html">テスト</a>
+      <a href="wrongList.html">解き直し</a>
+      <a href="studytime.html">学習時間</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <h2>過去問データ入力</h2>
+    年度 <input id="year" placeholder="2023"><br><br>
+    国語 <input id="jp"> 数学 <input id="math"> 英語 <input id="eng"><br><br>
+    理科 <input id="sci"> 社会 <input id="soc"><br><br>
+    <button onclick="save()">保存</button>
+  </div>
+
+  <!-- グラフ -->
+  <div class="card">
+    <h2>年度別 合計点（教科別）</h2>
+    <canvas id="chart"></canvas>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCYILTR11999wsK7zoFV2rfQkgneumhsvk",
+  authDomain: "akeducationalplatform.firebaseapp.com",
+  projectId: "akeducationalplatform",
+  storageBucket: "akeducationalplatform.firebasestorage.app",
+  messagingSenderId: "778140595189",
+  appId: "1:778140595189:web:301e7490b813b44782a6bc"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let uid;
+let chart;
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) location.href = "index.html";
+  uid = user.uid;
+  load();
+});
+
+window.save = async function() {
+  const year = year.value;
+  await setDoc(doc(db, "users", uid, "pastResults", year), {
+    国語: +jp.value,
+    数学: +math.value,
+    英語: +eng.value,
+    理科: +sci.value,
+    社会: +soc.value
+  });
+  load();
+};
+
+async function load() {
+  const snap = await getDocs(collection(db, "users", uid, "pastResults"));
+  const labels = [];
+  const data = { 国語: [], 数学: [], 英語: [], 理科: [], 社会: [] };
+
+  snap.forEach(d => {
+    labels.push(d.id);
+    Object.keys(data).forEach(k => data[k].push(d.data()[k]));
+  });
+
+  draw(labels.sort(), data);
+}
+
+function draw(labels, data) {
+  if (chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "国語", data: data.国語, backgroundColor: "#ef4444" },
+        { label: "数学", data: data.数学, backgroundColor: "#3b82f6" },
+        { label: "英語", data: data.英語, backgroundColor: "#22c55e" },
+        { label: "理科", data: data.理科, backgroundColor: "#a855f7" },
+        { label: "社会", data: data.社会, backgroundColor: "#f59e0b" }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, max: 500 }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
